@@ -7,6 +7,8 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -35,11 +37,11 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
             Long chatId = update.getMessage().getChatId();
 
             if (messageText.equals("/start")) {
-                sendReplyKeyboard(update.getMessage().getChatId());
+                sendReplyKeyboard(chatId);
             } else if (messageText.equals("Ключ у меня")) {
-
+                iHaveKey(update, chatId);
             } else if (messageText.equals("Ключ сдан")) {
-
+                isGivenKey(update, chatId);
             }
         }
 //        System.out.printf(
@@ -88,6 +90,50 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
 
         try {
             telegramClient.execute(message);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void iHaveKey(Update update, Long chatId) {
+        Message message = update.getMessage();
+        User user = message.getFrom();
+
+        String userName = getUserDisplayName(user);
+
+        SendMessage mess = SendMessage.builder()
+                .text("Ключ у " + userName)
+                .chatId(chatId)
+                .build();
+
+        try {
+            telegramClient.execute(mess);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getUserDisplayName(User user) {
+        if (user.getUserName() != null) {
+            return "@" + user.getUserName();  // Если есть @username
+        } else {
+            return user.getFirstName();       // Иначе просто имя
+        }
+    }
+
+    private void isGivenKey(Update update, Long chatId) {
+        Message message = update.getMessage();
+        User user = message.getFrom();
+
+        String userName = getUserDisplayName(user);
+
+        SendMessage mess = SendMessage.builder()
+                .text("Ключ сдан " + userName)
+                .chatId(chatId)
+                .build();
+
+        try {
+            telegramClient.execute(mess);
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
